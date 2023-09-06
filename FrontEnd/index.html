@@ -75,25 +75,23 @@
                         <form class="d-flex flex-column flex-lg-row" role="search" method="get" id="form1">
                             <input class="form-control me-2 mb-2 mb-lg-0" type="search" placeholder="Search"
                                    aria-label="Search" id="txtSearch">
-                            <button class="btn btn-outline-light dropdown-toggle me-2 mb-2 mb-lg-0" type="button"
+                            <select class="btn btn-outline-light dropdown-toggle me-2 mb-2 mb-lg-0" type="button"
                                     id="cusSearch" data-bs-toggle="dropdown" aria-expanded="false"
                                     style="background-color: rgb(182, 182, 182);">
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#">Action</a></li>
-                                    <li><a class="dropdown-item" href="#">Another action</a></li>
-                                    <li><a class="dropdown-item" href="#">Something else here</a></li>
-                                </ul>
-                            </button>
+                                <option><a class="dropdown-item" href="#">Customer Id</a></option>
+                                <option><a class="dropdown-item" href="#">Name</a></option>
+                            </select>
                                 <button class="btn btn-outline-light me-2" type="submit"
                                     style="color: rgb(255, 255, 255); background-color: rgb(197, 28, 146);">Search</button>
                         </form>
                         <!-- Add Customers Button -->
-                        <button type="button" class="btn btn-dark" data-bs-toggle="modal"
+                        <button type="button" class="btn btn-dark me-2" data-bs-toggle="modal"
                                 data-bs-target="#staticBackdrop" id="btnAddCustomer">
                             Add New Customer
                         </button>
                         <!-- Get All Button -->
-                        <button type="submit" class="btn btn-dark me-2" id="btnGetAll">
+                        <button type="submit" class="btn btn-light"
+                                style="background-color: rgb(128,128,128);" id="btnGetAll">
                             Get All
                         </button>
                     </div>
