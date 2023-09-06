@@ -1,11 +1,9 @@
-function setOrder(orderId, customerId, customerName, date, total, discount, amount) {
+function setOrder(orderId, cusId, cost, orderDate, orderDetails) {
     return {
         orderId: orderId,
-        customerId: customerId,
-        customerName: customerName,
-        date: date,
-        total: total,
-        discount: discount,
-        amount: amount
+        cusId: cusId,
+        cost: cost,
+        orderDate: orderDate,
+        orderDetails: orderDetails,
     };
 }
