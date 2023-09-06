@@ -31,7 +31,7 @@
             <div>
                 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top" style="border-radius: 10px;">
                     <div class="container-fluid">
-                        <a class="navbar-brand" style="font-weight: 700; font-size: 25px; color: rgb(165, 42, 114);">
+                        <a class="navbar-brand" href="#" style="font-weight: 700; font-size: 25px; color: rgb(165, 42, 114);">
                             <img src="../assets/img/icon1.png" alt=""
                                  style="width: 25px; height: 25px; border:2px; border-radius: 100%;">The Flora</a>
                         <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -69,9 +69,9 @@
                     <div class="container-fluid d-flex flex-column flex-lg-row">
                         <form class="d-flex flex-column flex-lg-row" role="search">
                             <input class="form-control me-2 mb-2 mb-lg-0" type="search" placeholder="Search"
-                                   aria-label="Search" id="txtItemSearch">
+                                   aria-label="Search" id="txtSearch">
                             <select class="btn btn-outline-light dropdown-toggle me-2 mb-2 mb-lg-0" type="button"
-                                    id="itemSearch" data-bs-toggle="dropdown" aria-expanded="false"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
                                     style="background-color: rgb(182, 182, 182);">
                                 <option><a class="dropdown-item" href="#">Item Code</a></option>
                                 <option><a class="dropdown-item" href="#">Item Name</a></option>
@@ -80,13 +80,19 @@
                                     style="color: rgb(255, 255, 255); background-color: rgb(197, 28, 146);">Search</button>
                         </form>
                         <!-- Add Items Button -->
-                        <button type="button" class="btn btn-dark" data-bs-toggle="modal"
-                                data-bs-target="#modelItem" id="btnAddNewItem">
+                        <button type="button" class="btn btn-dark me-2" data-bs-toggle="modal"
+                                data-bs-target="#staticBackdrop" id="btnAddItem">
                             Add New Item
                         </button>
 
+                        <!-- Get All Button -->
+                        <button type="button" class="btn btn-light"
+                                style="background-color: rgb(128,128,128);" id="btnGetAll">
+                            Get All
+                        </button>
+
                         <!-- Modal -->
-                        <div class="modal fade" id="modelItem" data-bs-backdrop="static" data-bs-keyboard="false"
+                        <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
                              tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -98,34 +104,29 @@
 
                                     <!-- Form -->
                                     <div class="d-flex justify-content-center">
-                                        <form class="w-75">
+                                        <form class="w-75" id="itemForm">
                                             <div class="mb-3">
-                                                <label for="txtItemCode" class="form-label">Item Code</label>
-                                                <input type="text" class="form-control" id="txtItemCode">
-                                                <span></span>
+                                                <label for="code" class="form-label">Item Code</label>
+                                                <input type="text" class="form-control" id="code" name="code">
                                             </div>
                                             <div class="mb-3">
-                                                <label for="txtItemName" class="form-label">Item Name</label>
-                                                <input type="text" class="form-control" id="txtItemName">
-                                                <span></span>
+                                                <label for="itemName" class="form-label">Item Name</label>
+                                                <input type="text" class="form-control" id="itemName" name="itemName">
                                             </div>
                                             <div class="mb-3">
-                                                <label for="txtItemPrice" class="form-label">Price</label>
-                                                <input type="text" class="form-control" id="txtItemPrice">
-                                                <span></span>
+                                                <label for="price" class="form-label">Price</label>
+                                                <input type="text" class="form-control" id="price" name="price">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="qtyOnHand" class="form-label">Quantity On Hand</label>
-                                                <input type="text" class="form-control" id="qtyOnHand">
-                                                <span></span>
+                                                <input type="text" class="form-control" id="qtyOnHand" name="qtyOnHand">
                                             </div>
                                         </form>
                                     </div>
 
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-warning" id="btnClearItem">Clear
-                                        </button>
-                                        <button type="button" class="btn btn-success" id="btnSaveItem">Save</button>
+                                        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Clear</button>
+                                        <button type="button" class="btn btn-success" data-bs-dismiss="modal" id="btnSave">Save</button>
                                     </div>
                                 </div>
                             </div>
@@ -146,7 +147,7 @@
                         <th scope="col">Options</th>
                     </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="" id="body">
 
                     </tbody>
                 </table>
@@ -164,17 +165,4 @@
 <script src="../controller/ManageItemController.js"></script>
 
 </body>
-
-<!-- JS For Bootstrap -->
-<script src="../assets/js/bootstrap.min.js"></script>
-
-<!-- JS For jQuery -->
-<script src="../assets/js/jquery-3.6.1.min.js"></script>
-
-<!-- Model -->
-<script src="../model/Item.js"></script>
-
-<!-- Controller -->
-<script src="../controller/ItemController.js"></script>
-
 </html>
