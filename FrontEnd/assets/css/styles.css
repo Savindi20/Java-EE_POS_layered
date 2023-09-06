@@ -1,0 +1,30 @@
+#bodyImg {
+    background: url("../img/img1.jpeg");
+    background-size: cover;
+    background-position: right;
+}
+
+main{
+    height: 100vh;
+}
+
+
+i:hover{
+    cursor: pointer;
+}
+
+.overflow-x{
+    overflow-x: hidden !important;
+}
+
+@media all and (min-width: 0) and (max-width: 768px){
+    .full-height{
+        height: 100vh !important;
+    }
+    .extra-height{
+        height: 190vh !important;
+    }
+    .margin{
+        margin-bottom: 5px;
+    }
+}
