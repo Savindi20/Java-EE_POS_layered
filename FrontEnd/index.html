@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Flower Store</title>
+    <title>POS | Customer</title>
     <!-- <meta http-equiv="refresh" content="3; ">> -->
     <link rel="icon" href="assets/img/store.png">
 
@@ -35,7 +35,7 @@
             <div>
                 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top" style="border-radius: 10px;">
                     <div class="container-fluid">
-                        <a class="navbar-brand" style="font-weight: 700; font-size: 25px; color: rgb(165, 42, 114);">
+                        <a class="navbar-brand" href="#" style="font-weight: 700; font-size: 25px; color: rgb(165, 42, 114);">
                             <img src="assets/img/icon1.png" alt=""
                                 style="width: 25px; height: 25px; border:2px; border-radius: 100%;">The Flora</a>
                         <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -68,27 +68,33 @@
                     </div>
                 </nav>
             </div>
-            <!-- Customers -->
             <!-- Search bar -->
             <div class="row">
                 <nav class="navbar">
                     <div class="container-fluid d-flex flex-column flex-lg-row">
-                        <form class="d-flex flex-column flex-lg-row" role="search">
+                        <form class="d-flex flex-column flex-lg-row" role="search" method="get" id="form1">
                             <input class="form-control me-2 mb-2 mb-lg-0" type="search" placeholder="Search"
-                                   aria-label="Search" id="txtCustomerSearch">
-                            <select class="btn btn-outline-light dropdown-toggle me-2 mb-2 mb-lg-0" type="button"
+                                   aria-label="Search" id="txtSearch">
+                            <button class="btn btn-outline-light dropdown-toggle me-2 mb-2 mb-lg-0" type="button"
                                     id="cusSearch" data-bs-toggle="dropdown" aria-expanded="false"
                                     style="background-color: rgb(182, 182, 182);">
-                                <option><a class="dropdown-item" href="#">Customer Id</a></option>
-                                <option><a class="dropdown-item" href="#">Name</a></option>
-                            </select>
-                            <button class="btn btn-outline-light me-2" type="submit"
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#">Action</a></li>
+                                    <li><a class="dropdown-item" href="#">Another action</a></li>
+                                    <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                </ul>
+                            </button>
+                                <button class="btn btn-outline-light me-2" type="submit"
                                     style="color: rgb(255, 255, 255); background-color: rgb(197, 28, 146);">Search</button>
                         </form>
                         <!-- Add Customers Button -->
                         <button type="button" class="btn btn-dark" data-bs-toggle="modal"
-                                data-bs-target="#staticBackdrop" id="btnAddNewCustomer">
+                                data-bs-target="#staticBackdrop" id="btnAddCustomer">
                             Add New Customer
+                        </button>
+                        <!-- Get All Button -->
+                        <button type="submit" class="btn btn-dark me-2" id="btnGetAll">
+                            Get All
                         </button>
                     </div>
                 </nav>
@@ -107,33 +113,29 @@
 
                         <!-- Form -->
                         <div class="d-flex justify-content-center">
-                            <form class="w-75">
+                            <form id="customerForm" class="w-75">
                                 <div class="mb-3">
-                                    <label for="txtCusId" class="form-label">Customer ID</label>
-                                    <input type="text" class="form-control" id="txtCusId">
-                                    <span></span>
+                                    <label for="cusId" class="form-label">Customer ID</label>
+                                    <input type="text" class="form-control" id="cusId" name="cusId">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="txtCusName" class="form-label">Customer Name</label>
-                                    <input type="text" class="form-control" id="txtCusName">
-                                    <span></span>
+                                    <label for="cusName" class="form-label">Customer Name</label>
+                                    <input type="text" class="form-control" id="cusName" name="cusName">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="txtAddress" class="form-label">Address</label>
-                                    <input type="text" class="form-control" id="txtAddress">
-                                    <span></span>
+                                    <label for="cusAddress" class="form-label">Address</label>
+                                    <input type="text" class="form-control" id="cusAddress" name="cusAddress">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="txtSalary" class="form-label">Salary</label>
-                                    <input type="text" class="form-control" id="txtSalary">
-                                    <span></span>
+                                    <label for="cusSalary" class="form-label">Salary</label>
+                                    <input type="text" class="form-control" id="cusSalary" name="cusSalary">
                                 </div>
                             </form>
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-warning" id="btnCustomerClear">Clear</button>
-                            <button type="button" class="btn btn-success" id="btnSaveCustomer">Save</button>
+                            <button name="" type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-success" id="btnSaveCustomer" data-bs-dismiss="modal">Save</button>
                         </div>
                     </div>
                 </div>
@@ -151,7 +153,7 @@
                         <th scope="col">Options</th>
                     </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="body">
 
                     </tbody>
                 </table>
@@ -171,7 +173,7 @@
     <script src="model/Customer.js"></script>
 
     <!-- Controller -->
-    <script src="controller/CustomerControler.js"></script>
+    <script src="controller/ManageCustomerController.js"></script>
 
 
 </body>
