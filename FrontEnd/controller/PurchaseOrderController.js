@@ -1,53 +1,99 @@
-$(function () {
-    $("#btnAddToCart").attr("disabled", true);
-    $("#btnPlaceOrder").attr("disabled", true);
-    $("#btnPurchaseOrder").attr("disabled", true);
+const baseUrl = "http://localhost:8080/backend/";
+let cartDB = [];
 
-    $('#modelPlaceOrder').on('shown.bs.modal', function () {
-        $('#dis').trigger('focus');
-    });
-});
+loadAllCustomerIdsInPurchaseOrder();
+loadAllItemCodesInPurchaseOrder();
 
 function loadAllCustomerIdsInPurchaseOrder() {
-    $("#cmbCustomerId").empty();
-    $("#cmbCustomerId").append(`<option disabled selected hidden>Customer ID</option>`);
+    $.ajax({
+        url: baseUrl + "customer",
+        type: "get",
+        dataType: "json",
+        success: function (res) {
+            $("#cmbCustomerId").empty();
+            $("#cmbCustomerId").append(`<option disabled selected hidden>Customer ID</option>`);
 
-    for (let customer of customerDB) {
-        $("#cmbCustomerId").append(`<option>${customer.cusId}</option>`);
-    }
+            for (let customer of res.data) {
+                $("#cmbCustomerId").append(`<option>${customer.id}</option>`);
+            }
+
+            alert(res.message);
+        },
+        error: function (error) {
+            let parse = JSON.parse(error.responseText);
+        }
+    });
 }
 
 function loadAllItemCodesInPurchaseOrder() {
-    $("#cmbItemCode").empty();
-    $("#cmbItemCode").append(`<option disabled selected hidden>Item Code</option>`);
+    $.ajax({
+        url: baseUrl + "item",
+        type: "get",
+        dataType: "json",
+        success: function (res) {
+            $("#cmbItemCode").empty();
+            $("#cmbItemCode").append(`<option disabled selected hidden>Item Code</option>`);
 
-    for (let item of itemDB) {
-        $("#cmbItemCode").append(`<option>${item.itemCode}</option>`);
-    }
+            for (let item of res.data) {
+                $("#cmbItemCode").append(`<option>${item.code}</option>`);
+            }
+
+            alert(res.message);
+
+        },
+        error: function (error) {
+            let parse = JSON.parse(error.responseText);
+        }
+    });
 }
 
 $("#cmbCustomerId").change(function () {
-    var customer = searchCustomer($(this).val());
-    $("#cusName").val(customer.cusName);
-    $("#cusAddress").val(customer.cusAddress);
-    $("#cusSalary").val(customer.cusSalary);
+    $.ajax({
+        url: baseUrl + "order?option=customer&cusId=" + $("#cmbCustomerId").val(),
+        method: "get",
+        dataType: "json",
+        contentType: "application/json",
+        success: function (res) {
+
+            $("#cusName").val(res.data.cusName);
+            $("#cusAddress").val(res.data.cusAddress);
+            $("#cusSalary").val(res.data.cusSalary);
+
+        },
+        error: function (error) {
+            // let parse = JSON.parse(error.responseText);
+            // alert(parse.message);
+            console.log(error)
+        }
+    });
+    console.log(baseUrl)
 });
 
 $("#cmbItemCode").change(function () {
-    var item = searchItem($(this).val());
-    var cartItem = searchCartItem($(this).val());
-    $("#item_name").val(item.itemName);
-    $("#unitPrice").val(item.unitPrice);
-    if (cartItem != null) {
-        $("#qty_OnHand").val(parseInt(item.qty) - parseInt(cartItem.qty));
-    } else {
-        $("#qty_OnHand").val(item.qty);
-    }
+    $.ajax({
+        url: baseUrl + "order?option=item&code=" + $("#cmbItemCode").val(),
+        type: "get",
+        dataType: "json",
+        success: function (res) {
+
+            // var item = searchItem($(this).val());
+            var cartItem = searchCartItem($("#cmbItemCode").val());
+            $("#item_name").val(res.data.name);
+            $("#unitPrice").val(res.data.price);
+            if (cartItem != null) {
+                $("#qty_OnHand").val(parseInt(res.data.qty) - parseInt(cartItem.qty));
+            } else {
+                $("#qty_OnHand").val(res.data.qty);
+            }
+        },
+        error: function (error) {
+            let parse = JSON.parse(error.responseText);
+        }
+    });
 });
 
 $("#btnAddToCart").on("click", function () {
     addToCart();
-    $(this).attr("disabled", true);
 });
 
 function addToCart() {
@@ -78,8 +124,16 @@ function addToCart() {
     }
 
     loadCart();
-    $("#btnPlaceOrder").attr("disabled", false);
     $("#txtQty").val("");
+}
+
+function searchCartItem(code) {
+    for (let cartItem of cartDB) {
+        if (cartItem.code == code) {
+            return cartItem;
+        }
+    }
+    return null;
 }
 
 // Load Cart
@@ -91,10 +145,16 @@ function loadCart() {
         $("#tblCart > tbody").append(
             `<tr><td>${cart.code}</td><td>${cart.name}</td><td>${cart.unitPrice}</td><td>${cart.qty}</td><td>${cart.total}</td><td><i class="bi bi-pencil-fill text-success me-4 purchase-order-edits"></i><i class="bi bi-trash text-danger purchase-order-deletes"></i></td></tr>`
         );
-        bindPurchaseEditEvent();
-        bindPurchaseDeleteEvent();
     }
     setTotal();
+}
+
+function setTotal() {
+    let total = 0;
+    for (let cartItem of cartDB) {
+        total += parseFloat(cartItem.total);
+    }
+    $("#total").val(total);
 }
 
 function bindPurchaseEditEvent() {
@@ -130,41 +190,6 @@ function deleteCartObject(code) {
     }
 }
 
-function searchCartItem(code) {
-    for (let cartItem of cartDB) {
-        if (cartItem.code == code) {
-            return cartItem;
-        }
-    }
-    return null;
-}
-
-function setTotal() {
-    let total = 0;
-    for (let cartItem of cartDB) {
-        total += parseFloat(cartItem.total);
-    }
-    $("#total").text(total + " /=");
-}
-
-function generateNewOrderId() {
-    if (ordersDB.length > 0) {
-        var lastId = ordersDB[ordersDB.length - 1].orderId;
-        var digit = lastId.substring(6);
-        var number = parseInt(digit) + 1;
-        return lastId.replace(digit, number);
-    } else {
-        return "ORD-001";
-    }
-}
-
-$("#btnPlaceOrder").on("click", function () {
-    $("#orderId").val(generateNewOrderId());
-    $("#customerId").val($("#cmbCustomerId").val());
-    $("#totalAmount").val($("#total").text());
-
-});
-
 $("#dis").on("keyup", function () {
     if ($(this).val() !== "") {
         $("#amount").val(parseFloat($("#totalAmount").val()) - parseFloat($(this).val()));
@@ -173,61 +198,28 @@ $("#dis").on("keyup", function () {
     }
 });
 
-$("#btnPurchaseOrder").on("click", function () {
-    purchaseOrder();
-});
+$("#btnPlaceOrder").on("click", function () {
 
-function purchaseOrder() {
-    let orderId = $("#orderId").val();
-    let customerId = $("#customerId").val();
-    let customerName = $("#cusName").val();
-    let date = new Date().toLocaleDateString();
-    let total = $("#totalAmount").val();
-    let discount = $("#dis").val();
-    let amount = $("#amount").val();
-    var order = setOrder(orderId, customerId, customerName, date, total, discount, amount);
-    ordersDB.push(order);
-    $("#modelPlaceOrder").modal('hide');
-    saveAlert();
-    for (let cartItem of cartDB) {
-        let searchItem1 = searchItem(cartItem.code);
-            var qtyOnHand = parseInt(searchItem1.qty) - parseInt(cartItem.qty);
-            updateItem(searchItem1.itemCode, searchItem1.itemName, searchItem1.unitPrice, qtyOnHand);
-    }
-    cartDB = [];
-    loadAllItems();
-    loadAllOrders();
-    loadCart();
-    clearCustomerAndItemTexts();
-}
+    let cusId = $("#cmbCustomerId").val();
 
-// validation
-const qtyRegEx = /^[0-9]{1,}$/
+    let json = {
+        cusId: cusId,
+        items: cartDB,
+        total: $("#total").val()
+    };
 
-$("#dis").on('keyup', function (event) {
-    if (check(qtyRegEx, $("#dis"))) {
-        $("#btnPurchaseOrder").attr("disabled", false);
-        if (event.key == "Enter") {
-            purchaseOrder();
+    $.ajax({
+        url: baseUrl + "order",
+        method: "post",
+        data: JSON.stringify(json),
+        dataType: "json",
+        success: function (res) {
+            alert(res.message);
+            console.log(json)
+        },
+        error: function (error) {
+            let parse = JSON.parse(error.responseText);
+            alert(parse.message);
         }
-    } else {
-        $("#btnPurchaseOrder").attr("disabled", true);
-    }
+    });
 });
-
-$("#txtQty").on('keyup', function (event) {
-    if (check(qtyRegEx, $("#txtQty"))) {
-        $("#btnAddToCart").attr("disabled", false);
-        if (event.key == "Enter") {
-            addToCart();
-        }
-    } else {
-        $("#btnAddToCart").attr("disabled", true);
-    }
-});
-
-function clearCustomerAndItemTexts() {
-    loadAllCustomerIdsInPurchaseOrder();
-    loadAllItemCodesInPurchaseOrder();
-    $("#cusName ,#cusAddress, #cusSalary, #item_name, #qty_OnHand, #unitPrice, #txtQty").val("");
-}
