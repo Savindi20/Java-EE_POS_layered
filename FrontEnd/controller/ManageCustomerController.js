@@ -1,62 +1,61 @@
-$(function () {
-    $("form").submit(function () {
-        return false;
-    });
 
-    // Auto Focus Customer Id
-    $('#staticBackdrop').on('shown.bs.modal', function () {
-        $('#txtCusId').trigger('focus');
-    });
-    loadAllCustomers();
-});
+const baseUrl = "http://localhost:8080/backend/";
 
-// Button Save On Action
+loadAllCustomers();
+
 $("#btnSaveCustomer").on("click", function () {
-    saveCustomer();
-});
+    let formData = $("#customerForm ").serialize();
 
-$("#btnAddNewCustomer").on("click", function () {
-    $("#btnSaveCustomer").text("Save");
-    $("#txtCusId,#txtCusName,#txtAddress,#txtSalary").val("");
-    checkValidity(customerValidations)
-});
+    let customer = new Customer($("#cusId").val(), $("#cusName").val(), $("#cusAddress").val(), $("#cusSalary").val());
 
-function saveCustomer() {
-    let customerId = $("#txtCusId").val();
-    let name = $("#txtCusName").val();
-    let address = $("#txtAddress").val();
-    let salary = $("#txtSalary").val();
+    let json = {
+        id: customer.getCusId(),
+        name: customer.getCusName(),
+        address: customer.getCusAddress(),
+        cusSalary: customer.getCusSalary()
+    };
 
-    if ($("#btnSaveCustomer").text() == "Save") {
-        var customer = setCustomer(customerId, name, address, salary);
-        customerDB.push(customer);
-        clearAllCustomerTexts();
-        saveAlert();
+    if ($(this).text() == "Save") {
+        $.ajax({
+            url: baseUrl + "customer",
+            type: "post",
+            data: formData,
+            dataType: "json",
+            success: function (res) {
+                loadAllCustomers();
+                alert(res.message);
+            },
+            error: function (error) {
+                let parse = JSON.parse(error.responseText);
+                alert(parse.message);
+            }
+        });
     } else {
-        updateCustomer(customerId, name, address, salary);
-        clearAllCustomerTexts();
-        updateAlert();
+        $.ajax({
+            url: baseUrl + "customer",
+            method: "put",
+            contentType: "application/json",
+            data: JSON.stringify(json),
+            dataType: "json",
+            success: function (res) {
+                loadAllCustomers();
+                alert(res.message);
+            },
+            error: function (error) {
+                let parse = JSON.parse(error.responseText);
+                alert(parse.message);
+            }
+        });
     }
-    loadAllCustomers();
-}
 
-// Load all customers
-function loadAllCustomers() {
+});
 
-    $("#tblCustomer > tbody").empty();
+$("#btnAddCustomer").on("click", function () {
+    $("#btnSaveCustomer").text("Save");
+})
 
-    for (let customer of customerDB) {
-        $("#tblCustomer > tbody").append(
-            `<tr><td>${customer.cusId}</td><td>${customer.cusName}</td><td>${customer.cusAddress}</td><td>${customer.cusSalary}</td><td><i class="bi bi-pencil-fill text-success me-4 customer-edits" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i><i class="bi bi-trash text-danger customer-deletes"></i></td></tr>`
-        );
-    }
-    bindCustomerEditEvent();
-    bindCustomerDeleteEvent();
-    loadAllCustomerIdsInPurchaseOrder();
-}
 
-// Edit button on action
-function bindCustomerEditEvent() {
+function bindEditEvent() {
 
     $(".customer-edits").on("click", function () {
         var id = $(this).parent().parent().children(":eq(0)").text();
@@ -67,151 +66,69 @@ function bindCustomerEditEvent() {
 
         var salary = $(this).parent().parent().children(":eq(3)").text();
 
-        setCustomerTextFields(id, name, address, salary);
+        let customer = new Customer(id, name, address, salary);
+
+        setCustomerTextFields(customer);
         $("#btnSaveCustomer").text("Update");
+
     });
 }
 
-// Delete button on action
-function bindCustomerDeleteEvent() {
+function bindDeleteEvent() {
     $(".customer-deletes").on("click", function () {
-        var cusId = $(this).parent().parent().children(":eq(0)").text();
-        let res = confirm("Are you sure..?");
-        if (res) {
-            deleteCustomer(cusId);
-        }
+
+        var id = $(this).parent().parent().children(":eq(0)").text();
+        console.log(id)
+
+        $.ajax({
+            url: baseUrl + "customer?cusId=" + id.trim(),
+            method: "delete",
+            dataType: "json",
+            success: function (res) {
+                loadAllCustomers();
+                alert(res.message);
+            },
+            error: function (error) {
+                let parse = JSON.parse(error.responseText);
+                alert(parse.message);
+            }
+        });
+
     });
 }
 
-function setCustomerTextFields(id, name, address, salary) {
-    $("#txtCusId").val(id);
-    $("#txtCusName").val(name);
-    $("#txtAddress").val(address);
-    $("#txtSalary").val(salary);
+function setCustomerTextFields(customer) {
+    $("#cusId").val(customer.getCusId().trim());
+    $("#cusName").val(customer.getCusName().trim());
+    $("#cusAddress").val(customer.getCusAddress().trim());
+    $("#cusSalary").val(customer.getCusSalary().trim());
 }
 
-$('#txtCustomerSearch').on("keyup", function () {
-    $("#tblCustomer > tbody").empty();
-    for (let customer of customerDB) {
-        if ($("#cusSearch").val() == "Customer Id") {
-            if (customer.cusId.indexOf($("#txtCustomerSearch").val()) !== -1) {
-                let row = `<tr><td>${customer.cusId}</td><td>${customer.cusName}</td><td>${customer.cusAddress}</td><td>${customer.cusSalary}</td><td><i class="bi bi-pencil-fill text-success me-4 customer-edits" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i><i class="bi bi-trash text-danger customer-deletes"></i></td></tr>`;
-                $("#tblCustomer > tbody").append(row);
+$("#btnGetAll").on("click", function () {
+    loadAllCustomers();
+});
+
+function loadAllCustomers() {
+    $.ajax({
+        url: baseUrl + "customer",
+        type: "get",
+        dataType: "json",
+        success: function (res) {
+
+            $("#body").empty();
+
+            for (let customer of res.data) {
+                $("#body").append(`<tr><td>` + customer.id + `</td><td>` + customer.name + `</td><td>` + customer.address + `</td><td>` + customer.salary + `</td><td><button type="button" class="border border-0 customer-edits"><i class="bi bi-pencil-fill text-success" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i></button><button class="border border-0 customer-deletes"><i class="bi bi-trash text-danger"></i></button></td></tr>`);
             }
-        } else {
-            if (customer.cusName.indexOf($("#txtCustomerSearch").val()) !== -1) {
-                let row = `<tr><td>${customer.cusId}</td><td>${customer.cusName}</td><td>${customer.cusAddress}</td><td>${customer.cusSalary}</td><td><i class="bi bi-pencil-fill text-success me-4 customer-edits" data-bs-toggle="modal" data-bs-target="#staticBackdrop"></i><i class="bi bi-trash text-danger customer-deletes"></i></td></tr>`;
-                $("#tblCustomer > tbody").append(row);
-            }
+
+            alert(res.message);
+            bindEditEvent();
+            bindDeleteEvent();
+
+        },
+        error: function (error) {
+            let parse = JSON.parse(error.responseText);
+            alert(parse.message);
         }
-    }
-    bindCustomerEditEvent();
-    bindCustomerDeleteEvent();
-});
-
-function searchCustomer(customerID) {
-    for (let customer of customerDB) {
-        if (customer.cusId == customerID) {
-            return customer;
-        }
-    }
-    return null;
-}
-
-function updateCustomer(customerId, name, address, salary) {
-    let customer = searchCustomer(customerId);
-    if (customer != null) {
-        customer.cusId = customerId;
-        customer.cusName = name;
-        customer.cusAddress = address;
-        customer.cusSalary = salary;
-        return true;
-    } else {
-        return false;
-    }
-}
-
-function deleteCustomer(customerID) {
-    let customer = searchCustomer(customerID);
-    if (customer != null) {
-        let indexNumber = customerDB.indexOf(customer);
-        customerDB.splice(indexNumber, 1);
-        loadAllCustomers();
-        deleteAlert();
-        return true;
-    } else {
-        return false;
-    }
-}
-
-// customer regular expressions
-const cusIDRegEx = /^(C00-)[0-9]{1,3}$/;
-const cusNameRegEx = /^[A-z ]{5,20}$/;
-const cusAddressRegEx = /^[0-9/A-z. ,]{5,}$/;
-const cusSalaryRegEx = /^[0-9]{1,}[.]?[0-9]{1,2}$/;
-
-let customerValidations = [];
-customerValidations.push({reg: cusIDRegEx, field: $('#txtCusId'), error: 'Customer ID Pattern is Wrong : C00-001'});
-customerValidations.push({
-    reg: cusNameRegEx,
-    field: $('#txtCusName'),
-    error: 'Customer Name Pattern is Wrong : A-z 5-20'
-});
-customerValidations.push({
-    reg: cusAddressRegEx,
-    field: $('#txtAddress'),
-    error: 'Customer Address Pattern is Wrong : A-z 0-9 ,/'
-});
-customerValidations.push({
-    reg: cusSalaryRegEx,
-    field: $('#txtSalary'),
-    error: 'Customer Salary Pattern is Wrong : 100 or 100.00'
-});
-
-$("#txtCusId,#txtCusName,#txtAddress,#txtSalary").on('keyup', function (event) {
-    checkValidity(customerValidations);
-});
-
-$("#txtCusId,#txtCusName,#txtAddress,#txtSalary").on('blur', function (event) {
-    checkValidity(customerValidations);
-});
-
-$("#txtCusId").on('keydown', function (event) {
-    if (event.key == "Enter" && check(cusIDRegEx, $("#txtCusId"))) {
-        $("#txtCusName").focus();
-    } else {
-        focusText($("#txtCusId"));
-    }
-});
-
-$("#txtCusName").on('keydown', function (event) {
-    if (event.key == "Enter" && check(cusNameRegEx, $("#txtCusName"))) {
-        focusText($("#txtAddress"));
-    }
-});
-
-$("#txtAddress").on('keydown', function (event) {
-    if (event.key == "Enter" && check(cusAddressRegEx, $("#txtAddress"))) {
-        focusText($("#txtSalary"));
-    }
-});
-
-$("#txtSalary").on('keydown', function (event) {
-    if (event.key == "Enter" && check(cusSalaryRegEx, $("#txtSalary"))) {
-        let res = confirm("Do you want to add this customer.?");
-        if (res) {
-            saveCustomer();
-            clearAllCustomerTexts(customerValidations);
-        }
-    }
-});
-
-$("#btnCustomerClear").on("click", function () {
-    clearAllCustomerTexts();
-});
-
-function clearAllCustomerTexts() {
-    $("#txtCusId").focus();
-    $("#txtCusId,#txtCusName,#txtAddress,#txtSalary").val("");
-    checkValidity(customerValidations);
+    });
 }
