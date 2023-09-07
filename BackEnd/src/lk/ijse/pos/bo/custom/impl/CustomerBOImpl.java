@@ -2,16 +2,27 @@ package lk.ijse.pos.bo.custom.impl;
 
 import lk.ijse.pos.bo.SuperBO;
 import lk.ijse.pos.bo.custom.CustomerBO;
+import lk.ijse.pos.dao.DAOFactory;
+import lk.ijse.pos.dao.custom.CustomerDAO;
 import lk.ijse.pos.dto.CustomerDTO;
+import lk.ijse.pos.entity.Customer;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class CustomerBOImpl implements CustomerBO, SuperBO {
+    private final CustomerDAO customerDAO = (CustomerDAO) DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.CUSTOMER);
+
     @Override
     public ArrayList<CustomerDTO> getAllCustomer(Connection connection) throws SQLException, ClassNotFoundException {
-        return null;
+        ArrayList<CustomerDTO> allCustomers = new ArrayList<>();
+        ArrayList<Customer> all =  customerDAO.getAll(connection);
+        for (Customer customer: all
+        ) {
+            allCustomers.add(new CustomerDTO(customer.getCustomerId(),customer.getCustomerName(),customer.getAddress(),customer.getSalary()));
+        }
+        return allCustomers;
     }
 
     @Override
