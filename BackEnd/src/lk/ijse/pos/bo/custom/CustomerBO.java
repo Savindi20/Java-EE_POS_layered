@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public interface CustomerBO {
-    ArrayList<CustomerDTO> getAllCustomer(Connection connection) throws SQLException, ClassNotFoundException;
+    ArrayList<CustomerDTO> getAllCustomers(Connection connection) throws SQLException, ClassNotFoundException;
 
     boolean saveCustomer(Connection connection, CustomerDTO customerDTO) throws SQLException, ClassNotFoundException;
 

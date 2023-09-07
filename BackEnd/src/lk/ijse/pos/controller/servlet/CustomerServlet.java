@@ -1,5 +1,9 @@
 package lk.ijse.pos.controller.servlet;
 
+import lk.ijse.pos.bo.BOFactory;
+import lk.ijse.pos.bo.custom.CustomerBO;
+import lk.ijse.pos.dto.CustomerDTO;
+
 import javax.json.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -8,25 +12,41 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
 
 @WebServlet(urlPatterns = "/customer")
 public class CustomerServlet extends HttpServlet {
 
+    private final CustomerBO customerBO = (CustomerBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.CUSTOMER);
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        JsonArrayBuilder allCustomers = Json.createArrayBuilder();
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer");
-            ResultSet rst = pstm.executeQuery();
-            JsonArrayBuilder allCustomers = Json.createArrayBuilder();
 
-            while (rst.next()) {
+            ArrayList<CustomerDTO> all = customerBO.getAllCustomers(connection);
+
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer");
+            ResultSet resultSet = pstm.executeQuery();
+
+            for (CustomerDTO customerDTO : all) {
+
                 JsonObjectBuilder customer = Json.createObjectBuilder();
-                customer.add("id", rst.getString("id"));
-                customer.add("name", rst.getString("name"));
-                customer.add("address", rst.getString("address"));
-                customer.add("salary", rst.getDouble("salary"));
+
+                customer.add("id", resultSet.getString(1));
+                customer.add("name", resultSet.getString(2));
+                customer.add("address", resultSet.getString(3));
+                customer.add("salary", resultSet.getDouble(4));
+            }
+
+            while (resultSet.next()) {
+                JsonObjectBuilder customer = Json.createObjectBuilder();
+                customer.add("id", resultSet.getString("id"));
+                customer.add("name", resultSet.getString("name"));
+                customer.add("address", resultSet.getString("address"));
+                customer.add("salary", resultSet.getDouble("salary"));
                 allCustomers.add(customer.build());
             }
 
