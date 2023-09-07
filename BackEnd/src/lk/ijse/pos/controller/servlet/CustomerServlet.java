@@ -3,6 +3,7 @@ package lk.ijse.pos.controller.servlet;
 import lk.ijse.pos.bo.BOFactory;
 import lk.ijse.pos.bo.custom.CustomerBO;
 import lk.ijse.pos.dto.CustomerDTO;
+import lk.ijse.pos.util.MessageUtil;
 
 import javax.json.*;
 import javax.servlet.ServletException;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 public class CustomerServlet extends HttpServlet {
 
     private final CustomerBO customerBO = (CustomerBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.CUSTOMER);
+    private final MessageUtil messageUtil = new MessageUtil();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -53,63 +55,33 @@ public class CustomerServlet extends HttpServlet {
 //                allCustomers.add(customer.build());
 //            }
 
-            JsonObjectBuilder job = Json.createObjectBuilder();
-
-            job.add("state","OK");
-            job.add("message","Successfully Loaded..!");
-            job.add("data",allCustomers.build());
-            resp.getWriter().print(job.build());
+            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded", allCustomers).build());
 
         }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String id = req.getParameter("id");
-        String name = req.getParameter("name");
-        String address = req.getParameter("address");
-        String salary = req.getParameter("salary");
+        String cusId = req.getParameter("cusId");
+        String cusName = req.getParameter("cusName");
+        String cusAddress = req.getParameter("cusAddress");
+        double cusSalary = Double.parseDouble(req.getParameter("cusSalary"));
 
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            PreparedStatement pstm = connection.prepareStatement("insert into Customer values(?,?,?,?)");
-            pstm.setObject(1,id);
-            pstm.setObject(2,name);
-            pstm.setObject(3,address);
-            pstm.setObject(4,salary);
-            boolean b = pstm.executeUpdate() > 0;
-            if (b){
-                JsonObjectBuilder responseObject = Json.createObjectBuilder();
-                responseObject.add("state","Ok");
-                responseObject.add("message","Successfully added..!");
-                responseObject.add("data","");
-                resp.getWriter().print(responseObject.build());
-            }
+            customerBO.saveCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary));
+
+            resp.setStatus(200);
+            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Added", "").build());
+
+        } catch (SQLException e) {
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         } catch (ClassNotFoundException e) {
-            JsonObjectBuilder error = Json.createObjectBuilder();
-            error.add("state","Ok");
-            error.add("message",e.getLocalizedMessage());
-            error.add("data","");
-//            resp.setStatus(500);
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(error.build());
-        }catch (SQLException e) {
-            JsonObjectBuilder error = Json.createObjectBuilder();
-            error.add("state","Error");
-            error.add("message",e.getLocalizedMessage());
-            error.add("data","");
-//            resp.setStatus(400);
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(error.build());
+            throw new RuntimeException(e);
         }
     }
 
