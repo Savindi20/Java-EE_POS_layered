@@ -5,5 +5,5 @@ import lk.ijse.pos.entity.Customer;
 
 import java.sql.Connection;
 
-public interface CustomerDAO extends CrudDAO<Customer, String> {
+public interface CustomerDAO extends CrudDAO<Connection, Customer, String> {
 }
