@@ -83,7 +83,7 @@ public class CustomerServlet extends HttpServlet {
             customerBO.deleteCustomer(connection, cusId);
 
             resp.setStatus(200);
-            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded", "").build());
+            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Deleted", "").build());
 
         } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
