@@ -7,10 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 import static java.lang.Class.forName;
 
@@ -18,73 +15,168 @@ import static java.lang.Class.forName;
 public class PurchaseOrderServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        JsonReader reader = Json.createReader(req.getReader());
-        JsonObject jsonObject = reader.readObject();
-
-
-        String orderId = jsonObject.getString("orderId");
-        String orderDate = jsonObject.getString("orderDate");
-        String customerId = jsonObject.getString("customerId");
-        String itemCode = jsonObject.getString("itemCode");
-        String qty = jsonObject.getString("qty");
-        String unitPrice = jsonObject.getString("unitPrice");
-        JsonArray orderDetails = jsonObject.getJsonArray("orderDetails");
+        String option = req.getParameter("option");
 
         try {
             forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posdb", "root", "1234");
-            connection.setAutoCommit(false);
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+            PreparedStatement pstm;
+            ResultSet resultSet;
 
-            PreparedStatement orderStatement = connection.prepareStatement("INSERT INTO order VALUES(?,?,?)");
-            orderStatement.setString(1, orderId);
-            orderStatement.setString(2, orderDate);
-            orderStatement.setString(3, customerId);
+            switch (option) {
+                case "customer":
+                    String cusId = req.getParameter("cusId");
+                    pstm = connection.prepareStatement("SELECT * FROM Customer WHERE customerId=?");
+                    pstm.setString(1, cusId);
+                    resultSet = pstm.executeQuery();
 
-            int affectedRows = orderStatement.executeUpdate();
-            if (affectedRows == 0) {
-                connection.rollback();
-                throw new RuntimeException("Failed to save the order");
-            }else {
-                System.out.println("Order Saved");
+                    if (resultSet.next()) {
+                        JsonObjectBuilder obj = Json.createObjectBuilder();
+                        obj.add("cusId", resultSet.getString(1));
+                        obj.add("cusName", resultSet.getString(2));
+                        obj.add("cusAddress", resultSet.getString(3));
+                        obj.add("cusSalary", resultSet.getString(4));
 
+                        obj.add("state", "OK");
+                        obj.add("message", "Successfully Loaded..!");
+                        obj.add("data", obj.build());
+                        resp.setStatus(200);
+
+                        resp.getWriter().print(obj.build());
+
+                    } else {
+                        throw new SQLException("No Such Customer ID");
+                    }
+                    break;
+                case "item":
+                    String code = req.getParameter("code");
+                    pstm = connection.prepareStatement("SELECT * FROM Item WHERE code=?");
+                    pstm.setString(1, code);
+                    resultSet = pstm.executeQuery();
+
+                    if (resultSet.next()) {
+                        JsonObjectBuilder obj = Json.createObjectBuilder();
+                        obj.add("code", resultSet.getString(1));
+                        obj.add("name", resultSet.getString(2));
+                        obj.add("qty", resultSet.getInt(3));
+                        obj.add("price", resultSet.getDouble(4));
+
+                        obj.add("state", "OK");
+                        obj.add("message", "Successfully Loaded..!");
+                        obj.add("data", obj.build());
+                        resp.setStatus(200);
+
+                        resp.getWriter().print(obj.build());
+
+                    } else {
+                        throw new SQLException("No Such Customer ID");
+                    }
+                    break;
             }
 
+        } catch (SQLException | ClassNotFoundException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
 
-            PreparedStatement orderDetailStatement = connection.prepareStatement("INSERT INTO order_detail VALUES(?,?,?,?)");
-            orderDetailStatement.setString(1,itemCode );
-            orderDetailStatement.setString(2, orderId);
-            orderDetailStatement.setString(3, qty);
-            orderDetailStatement.setString(4, unitPrice);
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
-            affectedRows = orderDetailStatement.executeUpdate();
-            if (affectedRows == 0) {
-                connection.rollback();
-                throw new RuntimeException("Failed to save the order details");
-            }else {
-                System.out.println("Order Details Saved");
-            }
-
-
-
-            connection.commit();
-            resp.setStatus(HttpServletResponse.SC_OK);
-            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-            objectBuilder.add("message", "Successfully Purchased Order.");
-            objectBuilder.add("status", resp.getStatus());
-            resp.getWriter().print(objectBuilder.build());
-
-
-        }catch (ClassNotFoundException e){
-            throw new RuntimeException(e);
-        } catch (SQLException e) {
-            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-            objectBuilder.add("message", "Failed to save the order.");
-            objectBuilder.add("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(objectBuilder.build());
-
+            resp.getWriter().print(obj.build());
         }
-
     }
 
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        JsonReader reader = Json.createReader(req.getReader());
+
+        JsonObject details = reader.readObject();
+        String cusId = details.getString("cusId");
+        JsonArray items = details.getJsonArray("items");
+        String total = details.getString("total");
+
+        boolean b = false;
+        try {
+            forName("com.mysql.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+            String orderId = generateNewID();
+
+            PreparedStatement pstm = connection.prepareStatement("INSERT INTO `Order` VALUES (?,?,?)");
+            pstm.setString(1, orderId);
+            pstm.setString(2, cusId);
+            pstm.setDouble(3, Double.parseDouble(total));
+
+            pstm.executeUpdate();
+
+            for (JsonValue item : items) {
+
+                pstm = connection.prepareStatement("INSERT INTO Order_Detail VALUES (?,?,?,?)");
+
+                JsonObject jsonObject = item.asJsonObject();
+
+                pstm.setString(1, orderId);
+                pstm.setString(2, jsonObject.getString("code"));
+                pstm.setDouble(3, Double.parseDouble(jsonObject.getString("unitPrice")));
+                pstm.setInt(4, Integer.parseInt(jsonObject.getString("qty")));
+
+                pstm.executeUpdate();
+
+                pstm = connection.prepareStatement("UPDATE Item SET qty=qty-? WHERE code=?");
+
+                pstm.setInt(1, Integer.parseInt(jsonObject.getString("qty")));
+                pstm.setString(2, jsonObject.getString("code"));
+
+                b = pstm.executeUpdate() > 0;
+            }
+
+            if (b) {
+
+                JsonObjectBuilder obj = Json.createObjectBuilder();
+
+                obj.add("state", "OK");
+                obj.add("message", "Order Placed");
+                obj.add("data", "");
+                resp.setStatus(200);
+
+                resp.getWriter().print(obj.build());
+
+            }
+
+
+        } catch (ClassNotFoundException e) {
+
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);  // 500 // Server Side Errors
+
+            resp.getWriter().print(obj.build());
+
+        } catch (SQLException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);  // 400 // Client Side Errors
+
+            resp.getWriter().print(obj.build());
+        }
+    }
+
+    public String generateNewID() throws SQLException, ClassNotFoundException {
+        Class.forName("com.mysql.jdbc.Driver");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        PreparedStatement pstm = connection.prepareStatement("SELECT orderId FROM `Order` ORDER BY orderId DESC LIMIT 1;");
+        ResultSet rst = pstm.executeQuery();
+        if (rst.next()) {
+            String id = rst.getString("orderId");
+            int newCustomerId = Integer.parseInt(id.replace("O", "")) + 1;
+            return String.format("O%03d", newCustomerId);
+        } else {
+            return "O001";
+        }
+    }
 }
