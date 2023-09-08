@@ -102,7 +102,7 @@ public class ItemServlet extends HttpServlet {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            if (itemBO.updateItem(connection, new ItemDTO(code,name,qty,price))) {
+            if (itemBO.updateItem(connection, new ItemDTO(code, name, qty, price))){
                 resp.setStatus(200);
                 resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());
             }
