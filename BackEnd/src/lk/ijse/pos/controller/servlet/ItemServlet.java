@@ -12,79 +12,110 @@ import java.sql.*;
 @WebServlet(urlPatterns = "/item")
 public class ItemServlet extends HttpServlet {
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+        JsonArrayBuilder allItems = Json.createArrayBuilder();
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
             PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Item");
-            ResultSet rst = pstm.executeQuery();
-            JsonArrayBuilder allItems = Json.createArrayBuilder();
+            ResultSet resultSet = pstm.executeQuery();
 
-            while (rst.next()) {
+            while (resultSet.next()) {
+
                 JsonObjectBuilder item = Json.createObjectBuilder();
-                item.add("code", rst.getString("code"));
-                item.add("description", rst.getString("description"));
-                item.add("qtyOnHand", rst.getString("qtyOnHand"));
-                item.add("unitPrice", rst.getDouble("unitPrice"));
+
+                item.add("code", resultSet.getString(1));
+                item.add("name", resultSet.getString(2));
+                item.add("qty", resultSet.getInt(3));
+                item.add("price", resultSet.getDouble(4));
+
                 allItems.add(item.build());
+
             }
 
-            JsonObjectBuilder job = Json.createObjectBuilder();
-            job.add("state","OK");
-            job.add("message","Successfully Loaded..!");
-            job.add("data",allItems.build());
-            resp.getWriter().print(job.build());
+            JsonObjectBuilder obj = Json.createObjectBuilder();
 
-        }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
+            obj.add("state", "OK");
+            obj.add("message", "Successfully Loaded..!");
+            obj.add("data", allItems);
+            resp.setStatus(200);
+
+            resp.getWriter().print(obj.build());
+
+        } catch (ClassNotFoundException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+
+            resp.getWriter().print(obj.build());
+        } catch (SQLException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+            resp.getWriter().print(obj.build());
         }
+
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String code = req.getParameter("code");
-        String description = req.getParameter("description");
-        String qtyOnHand = req.getParameter("qtyOnHand");
-        String unitPrice = req.getParameter("unitPrice");
+        String name = req.getParameter("itemName");
+        int qty = Integer.parseInt(req.getParameter("qtyOnHand"));
+        double price = Double.parseDouble(req.getParameter("price"));
 
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            PreparedStatement pstm = connection.prepareStatement("insert into Item values(?,?,?,?)");
-            pstm.setObject(1,code);
-            pstm.setObject(2,description);
-            pstm.setObject(3,qtyOnHand);
-            pstm.setObject(4,unitPrice);
+            PreparedStatement pstm = connection.prepareStatement("INSERT INTO Item VALUES (?,?,?,?)");
+
+            pstm.setString(1, code);
+            pstm.setString(2, name);
+            pstm.setInt(3, qty);
+            pstm.setDouble(4, price);
             boolean b = pstm.executeUpdate() > 0;
-            if (b){
-                JsonObjectBuilder responseObject = Json.createObjectBuilder();
-                responseObject.add("state","Ok");
-                responseObject.add("message","Successfully added..!");
-                responseObject.add("data","");
-                resp.getWriter().print(responseObject.build());
+
+            if (b) {
+
+                JsonObjectBuilder obj = Json.createObjectBuilder();
+
+                obj.add("state", "OK");
+                obj.add("message", "Successfully Added");
+                obj.add("data", "");
+                resp.setStatus(200);
+
+                resp.getWriter().print(obj.build());
+
             }
+
         } catch (ClassNotFoundException e) {
-            JsonObjectBuilder error = Json.createObjectBuilder();
-            error.add("state","Ok");
-            error.add("message",e.getLocalizedMessage());
-            error.add("data","");
-//            resp.setStatus(500);
+
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(error.build());
-        }catch (SQLException e) {
-            JsonObjectBuilder error = Json.createObjectBuilder();
-            error.add("state","Error");
-            error.add("message",e.getLocalizedMessage());
-            error.add("data","");
-//            resp.setStatus(400);
+
+            resp.getWriter().print(obj.build());
+
+        } catch (SQLException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(error.build());
+
+            resp.getWriter().print(obj.build());
         }
     }
 
@@ -94,32 +125,44 @@ public class ItemServlet extends HttpServlet {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("delete from Item where code=?");
-            pstm.setObject(1,code);
+            PreparedStatement pstm = connection.prepareStatement("DELETE FROM Item WHERE code=?");
+
+            pstm.setString(1, code);
             boolean b = pstm.executeUpdate() > 0;
+
             if (b) {
-                JsonObjectBuilder rjo = Json.createObjectBuilder();
-                rjo.add("state","Ok");
-                rjo.add("message","Successfully Deleted..!");
-                rjo.add("data","");
-                resp.getWriter().print(rjo.build());
-            }else {
-                throw new RuntimeException("There is no Item for that ID..!");
+
+                JsonObjectBuilder obj = Json.createObjectBuilder();
+
+                obj.add("state", "OK");
+                obj.add("message", "Successfully Deleted");
+                obj.add("data", "");
+                resp.setStatus(200);
+
+                resp.getWriter().print(obj.build());
+
+            } else {
+                throw new SQLException("No Such Item Code");
             }
-        } catch (RuntimeException e) {
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(rjo.build());
-        }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
+
+        } catch (ClassNotFoundException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+
+            resp.getWriter().print(obj.build());
+        } catch (SQLException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+            resp.getWriter().print(obj.build());
         }
     }
 
@@ -127,43 +170,52 @@ public class ItemServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         JsonReader reader = Json.createReader(req.getReader());
         JsonObject item = reader.readObject();
+
         String code = item.getString("code");
-        String description = item.getString("description");
-        String qtyOnHand = item.getString("qtyOnHand");
-        String unitPrice = item.getString("unitPrice");
+        String name = item.getString("itemName");
+        int qty = item.getInt("qtyOnHand");
+        String price = item.getString("price");
+
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("update Item set description=?,qtyOnHand=?,unitPrice=? where code=?");
-            pstm.setObject(4,code);
-            pstm.setObject(1,description);
-            pstm.setObject(2,qtyOnHand);
-            pstm.setObject(3,unitPrice);
-            boolean b = pstm.executeUpdate() > 0;
-            if (b){
-                JsonObjectBuilder responseObject = Json.createObjectBuilder();
-                responseObject.add("state","Ok");
-                responseObject.add("message","Successfully Updated..!");
-                responseObject.add("data","");
-                resp.getWriter().print(responseObject.build());
-            }else{
-                throw new RuntimeException("Wrong ID, Please check the ID..!");
-            }
+            PreparedStatement pstm = connection.prepareStatement("UPDATE Item SET name=?, qty=?, price=? WHERE code=?");
 
-        } catch (RuntimeException e) {
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(rjo.build());
-        }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
+            pstm.setString(1, name);
+            pstm.setInt(2, qty);
+            pstm.setString(3, price);
+            pstm.setString(4, code);
+            boolean b = pstm.executeUpdate() > 0;
+            if (b) {
+                JsonObjectBuilder obj = Json.createObjectBuilder();
+
+                obj.add("state", "OK");
+                obj.add("message", "Successfully Updated");
+                obj.add("data", "");
+                resp.setStatus(200);
+
+                resp.getWriter().print(obj.build());
+            } else {
+                throw new SQLException("No Such Customer ID");
+            }
+        } catch (ClassNotFoundException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+
+            resp.getWriter().print(obj.build());
+        } catch (SQLException e) {
+            JsonObjectBuilder obj = Json.createObjectBuilder();
+
+            obj.add("state", "Error");
+            obj.add("message", e.getLocalizedMessage());
+            obj.add("data", "");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+            resp.getWriter().print(obj.build());
         }
     }
 }
