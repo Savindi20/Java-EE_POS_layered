@@ -60,6 +60,7 @@ public class ItemServlet extends HttpServlet {
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
             if (itemBO.saveItem(connection, new ItemDTO(code, name, qty, price))) {
+                resp.setStatus(200);
                 resp.getWriter().print(messageUtil.buildJsonObject("OK","Successfully Added", "").build());
             }
         } catch (SQLException | ClassNotFoundException e) {
@@ -96,21 +97,15 @@ public class ItemServlet extends HttpServlet {
         String code = item.getString("code");
         String name = item.getString("itemName");
         int qty = item.getInt("qtyOnHand");
-        String price = item.getString("price");
+        double price = Double.parseDouble(item.getString("price"));
 
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("UPDATE Item SET name=?, qty=?, price=? WHERE code=?");
-
-            pstm.setString(1, name);
-            pstm.setInt(2, qty);
-            pstm.setString(3, price);
-            pstm.setString(4, code);
-            resp.setStatus(200);
-
-
-            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());
+            if (itemBO.updateItem(connection, new ItemDTO(code,name,qty,price))) {
+                resp.setStatus(200);
+                resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());
+            }
 
         } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
