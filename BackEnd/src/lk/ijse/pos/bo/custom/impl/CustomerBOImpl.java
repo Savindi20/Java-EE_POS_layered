@@ -42,7 +42,7 @@ public class CustomerBOImpl implements CustomerBO, SuperBO {
 
     @Override
     public void deleteCustomer(Connection connection, String id) throws SQLException, ClassNotFoundException {
-
+        customerDAO.delete(connection, id);
     }
 
     @Override

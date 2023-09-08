@@ -74,44 +74,27 @@ public class CustomerServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String id = req.getParameter("id");
+        String cusId = req.getParameter("cusId");
+
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("delete from Customer where id=?");
-            pstm.setObject(1,id);
-            boolean b = pstm.executeUpdate() > 0;
-            if (b) {
-                JsonObjectBuilder rjo = Json.createObjectBuilder();
-                rjo.add("state","Ok");
-                rjo.add("message","Successfully Deleted..!");
-                rjo.add("data","");
-                resp.getWriter().print(rjo.build());
-            }else {
-                throw new RuntimeException("There is no Customer for that ID..!");
-            }
-        } catch (RuntimeException e) {
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
+
+            customerBO.deleteCustomer(connection, cusId);
+
+            resp.setStatus(200);
+            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded", "").build());
+
+        } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(rjo.build());
-        }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        JsonReader reader = Json.createReader(req.getReader());
-        JsonObject customer = reader.readObject();
+        JsonObject customer = Json.createReader(req.getReader()).readObject();
 
         String cusId = customer.getString("id");
         String cusName = customer.getString("name");
