@@ -59,20 +59,12 @@ public class ItemServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            PreparedStatement pstm = connection.prepareStatement("INSERT INTO Item VALUES (?,?,?,?)");
-
-            pstm.setString(1, code);
-            pstm.setString(2, name);
-            pstm.setInt(3, qty);
-            pstm.setDouble(4, price);
-
-
-            resp.setStatus(200);
-            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Added", "").build());
-
+            if (itemBO.saveItem(connection, new ItemDTO(code, name, qty, price))) {
+                resp.getWriter().print(messageUtil.buildJsonObject("OK","Successfully Added", "").build());
+            }
         } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
+            resp.getWriter().print(messageUtil.buildJsonObject("Error",e.getLocalizedMessage(), "").build());
 
         }
     }
