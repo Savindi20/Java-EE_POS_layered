@@ -27,7 +27,7 @@ public class ItemBOImpl implements ItemBO, SuperBO {
 
     @Override
     public void deleteItems(Connection connection, String id) throws SQLException, ClassNotFoundException {
-
+        itemDAO.delete(connection, id);
     }
 
     @Override
