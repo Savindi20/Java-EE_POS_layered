@@ -76,12 +76,13 @@ public class ItemServlet extends HttpServlet {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("DELETE FROM Item WHERE code=?");
 
-            pstm.setString(1, code);
-
-            resp.setStatus(200);
-            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Deleted", "").build());
+            if (itemBO.deleteItems(connection, code)) {
+                resp.setStatus(200);
+                resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Deleted", "").build());
+            }else {
+                throw new SQLException("No Such Item Code");
+            }
 
         } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
