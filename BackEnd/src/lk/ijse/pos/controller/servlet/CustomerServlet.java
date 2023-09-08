@@ -3,6 +3,7 @@ package lk.ijse.pos.controller.servlet;
 import lk.ijse.pos.bo.BOFactory;
 import lk.ijse.pos.bo.custom.CustomerBO;
 import lk.ijse.pos.dto.CustomerDTO;
+import lk.ijse.pos.dto.ItemDTO;
 import lk.ijse.pos.util.MessageUtil;
 
 import javax.json.*;
@@ -60,10 +61,10 @@ public class CustomerServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            customerBO.saveCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary));
-
-            resp.setStatus(200);
-            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Added", "").build());
+            if (customerBO.saveCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary))) {
+                resp.setStatus(200);
+                resp.getWriter().print(messageUtil.buildJsonObject("OK","Successfully Added", "").build());
+            }
 
         } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -80,10 +81,12 @@ public class CustomerServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            customerBO.deleteCustomer(connection, cusId);
-
-            resp.setStatus(200);
-            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Deleted", "").build());
+            if (customerBO.deleteCustomer(connection, cusId)) {
+                resp.setStatus(200);
+                resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Deleted", "").build());
+            }else {
+                throw new SQLException("No Such Item Code..!");
+            }
 
         } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -104,10 +107,13 @@ public class CustomerServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            customerBO.updateCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary));
+            if (customerBO.updateCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary))) {
+                resp.setStatus(200);
+                resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());
 
-            resp.setStatus(200);
-            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());
+            } else {
+                throw new SQLException("No Such Customer ID");
+            }
 
       } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);

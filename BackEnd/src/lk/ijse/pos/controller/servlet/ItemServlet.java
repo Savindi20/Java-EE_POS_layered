@@ -43,7 +43,7 @@ public class ItemServlet extends HttpServlet {
 
         }catch (ClassNotFoundException | SQLException e){
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(messageUtil.buildJsonObject("OK",e.getLocalizedMessage(),"").build());
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
 
     }
@@ -81,7 +81,7 @@ public class ItemServlet extends HttpServlet {
                 resp.setStatus(200);
                 resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Deleted", "").build());
             }else {
-                throw new SQLException("No Such Item Code");
+                throw new SQLException("No Such Item Code..!");
             }
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -106,6 +106,8 @@ public class ItemServlet extends HttpServlet {
             if (itemBO.updateItem(connection, new ItemDTO(code, name, qty, price))){
                 resp.setStatus(200);
                 resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());
+            }else {
+                throw new SQLException("No Such Item Code");
             }
 
         } catch (SQLException | ClassNotFoundException e) {
