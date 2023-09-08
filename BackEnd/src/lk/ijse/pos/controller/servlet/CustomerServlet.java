@@ -29,10 +29,6 @@ public class CustomerServlet extends HttpServlet {
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
             ArrayList<CustomerDTO> all = customerBO.getAllCustomers(connection);
-
-//            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer");
-//            ResultSet resultSet = pstm.executeQuery();
-
             for (CustomerDTO customerDTO : all) {
 
                 JsonObjectBuilder customer = Json.createObjectBuilder();
@@ -45,16 +41,6 @@ public class CustomerServlet extends HttpServlet {
                 allCustomers.add(customer.build());
 
             }
-
-//            while (resultSet.next()) {
-//                JsonObjectBuilder customer = Json.createObjectBuilder();
-//                customer.add("id", resultSet.getString("id"));
-//                customer.add("name", resultSet.getString("name"));
-//                customer.add("address", resultSet.getString("address"));
-//                customer.add("salary", resultSet.getDouble("salary"));
-//                allCustomers.add(customer.build());
-//            }
-
             resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded", allCustomers).build());
 
         }catch (ClassNotFoundException | SQLException e){
@@ -122,45 +108,26 @@ public class CustomerServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
         JsonReader reader = Json.createReader(req.getReader());
         JsonObject customer = reader.readObject();
-        String id = customer.getString("id");
-        String name = customer.getString("name");
-        String address = customer.getString("address");
-        String salary = customer.getString("salary");
+
+        String cusId = customer.getString("id");
+        String cusName = customer.getString("name");
+        String cusAddress = customer.getString("address");
+        double cusSalary = Double.parseDouble(customer.getString("cusSalary"));
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("update Customer set name=?,address=?,salary=? where id=?");
-            pstm.setObject(4,id);
-            pstm.setObject(1,name);
-            pstm.setObject(2,address);
-            pstm.setObject(3,salary);
-            boolean b = pstm.executeUpdate() > 0;
-            if (b){
-                JsonObjectBuilder responseObject = Json.createObjectBuilder();
-                responseObject.add("state","Ok");
-                responseObject.add("message","Successfully Updated..!");
-                responseObject.add("data","");
-                resp.getWriter().print(responseObject.build());
-            }else{
-                throw new RuntimeException("Wrong ID, Please check the ID..!");
-            }
 
-        } catch (RuntimeException e) {
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
+            customerBO.updateCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary));
+
+            resp.setStatus(200);
+            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());
+
+      } catch (SQLException | ClassNotFoundException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(rjo.build());
-        }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
     }
 }
