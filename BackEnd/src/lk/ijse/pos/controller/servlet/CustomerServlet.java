@@ -44,6 +44,7 @@ public class CustomerServlet extends HttpServlet {
             resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded", allCustomers).build());
 
         }catch (ClassNotFoundException | SQLException e){
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
     }
@@ -64,10 +65,10 @@ public class CustomerServlet extends HttpServlet {
             resp.setStatus(200);
             resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Added", "").build());
 
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+
         }
     }
 
