@@ -2,6 +2,7 @@ package lk.ijse.pos.bo;
 
 import lk.ijse.pos.bo.custom.impl.CustomerBOImpl;
 import lk.ijse.pos.bo.custom.impl.ItemBOImpl;
+import lk.ijse.pos.bo.custom.impl.OrderDetailBOImpl;
 import lk.ijse.pos.bo.custom.impl.PurchaseOrderBOImpl;
 
 public class BOFactory {
@@ -27,6 +28,8 @@ public class BOFactory {
                 return new ItemBOImpl();
             case ORDER:
                 return new PurchaseOrderBOImpl();
+            case ORDER_DETAILS:
+                return new OrderDetailBOImpl();
             default:
                 return null;
         }
