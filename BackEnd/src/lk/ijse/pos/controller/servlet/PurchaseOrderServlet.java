@@ -100,7 +100,7 @@ public class PurchaseOrderServlet extends HttpServlet {
             forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            String orderId = generateNewID();
+            String orderId = purchaseOrderBO.generateNewOrderID(connection);
             List<OrderDetailDTO> orderDetails = new ArrayList<>();
             for (JsonValue item : items) {
                 JsonObject jsonObject = item.asJsonObject();
@@ -115,20 +115,6 @@ public class PurchaseOrderServlet extends HttpServlet {
         } catch (ClassNotFoundException | SQLException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
-        }
-    }
-
-    public String generateNewID() throws SQLException, ClassNotFoundException {
-        Class.forName("com.mysql.jdbc.Driver");
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/POS", "sandu", "1234");
-        PreparedStatement pstm = connection.prepareStatement("SELECT orderId FROM `Order` ORDER BY orderId DESC LIMIT 1;");
-        ResultSet rst = pstm.executeQuery();
-        if (rst.next()) {
-            String id = rst.getString("orderId");
-            int newCustomerId = Integer.parseInt(id.replace("O", "")) + 1;
-            return String.format("O%03d", newCustomerId);
-        } else {
-            return "O001";
         }
     }
 }
