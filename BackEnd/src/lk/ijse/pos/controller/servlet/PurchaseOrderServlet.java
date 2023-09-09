@@ -2,6 +2,7 @@ package lk.ijse.pos.controller.servlet;
 
 import lk.ijse.pos.bo.BOFactory;
 import lk.ijse.pos.bo.custom.PurchaseOrderBO;
+import lk.ijse.pos.dto.CustomerDTO;
 import lk.ijse.pos.dto.OrderDTO;
 import lk.ijse.pos.dto.OrderDetailDTO;
 import lk.ijse.pos.util.MessageUtil;
@@ -33,20 +34,21 @@ public class PurchaseOrderServlet extends HttpServlet {
         try {
             forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+
             PreparedStatement pstm;
             ResultSet resultSet;
+
             switch (option) {
                 case "customer":
-                    String cusId = req.getParameter("cusId");
-                    pstm = connection.prepareStatement("SELECT * FROM Customer WHERE customerId=?");
-                    pstm.setString(1, cusId);
-                    resultSet = pstm.executeQuery();
-                    if (resultSet.next()) {
+                    CustomerDTO customerDTO = purchaseOrderBO.searchCustomer(connection, req.getParameter("cusId"));
+
+                    if (customerDTO != null) {
                         JsonObjectBuilder obj = Json.createObjectBuilder();
-                        obj.add("cusId", resultSet.getString(1));
-                        obj.add("cusName", resultSet.getString(2));
-                        obj.add("cusAddress", resultSet.getString(3));
-                        obj.add("cusSalary", resultSet.getString(4));
+                        obj.add("cusId", customerDTO.getCusId());
+                        obj.add("cusName", customerDTO.getCusName());
+                        obj.add("cusAddress", customerDTO.getAddress());
+                        obj.add("cusSalary", customerDTO.getSalary());
+
                         obj.add("state", "OK");
                         obj.add("message", "Successfully Loaded..!");
                         obj.add("data", obj.build());
