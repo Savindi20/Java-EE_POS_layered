@@ -2,12 +2,14 @@ package lk.ijse.pos.bo.custom.impl;
 
 import lk.ijse.pos.bo.custom.PurchaseOrderBO;
 import lk.ijse.pos.dao.DAOFactory;
+import lk.ijse.pos.dao.custom.ItemDAO;
 import lk.ijse.pos.dao.custom.OrderDAO;
 import lk.ijse.pos.dao.custom.OrderDetailDAO;
 import lk.ijse.pos.dto.CustomerDTO;
 import lk.ijse.pos.dto.ItemDTO;
 import lk.ijse.pos.dto.OrderDTO;
 import lk.ijse.pos.dto.OrderDetailDTO;
+import lk.ijse.pos.entity.Item;
 import lk.ijse.pos.entity.Order;
 import lk.ijse.pos.entity.OrderDetail;
 
@@ -16,10 +18,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class PurchaseOrderBOImpl implements PurchaseOrderBO {
-
     private final OrderDAO orderDAO = (OrderDAO) DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.ORDER);
     private final OrderDetailDAO orderDetailDAO = (OrderDetailDAO) DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.ORDER_DETAILS);
-
+    private final ItemDAO itemDAO = (ItemDAO) DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.ITEM);
     @Override
     public boolean purchaseOrder(Connection connection, OrderDTO order) throws SQLException, ClassNotFoundException {
         connection.setAutoCommit(false);
@@ -28,15 +29,14 @@ public class PurchaseOrderBOImpl implements PurchaseOrderBO {
             connection.setAutoCommit(true);
             return false;
         }
-
         for (OrderDetailDTO detailDTO : order.getOrderDetails()) {
             if (orderDetailDAO.save(connection, new OrderDetail(detailDTO.getOrderId(),detailDTO.getItemCode(),detailDTO.getPrice(),detailDTO.getQty()))) {
                 connection.rollback();
                 connection.setAutoCommit(true);
                 return false;
             }
+            searchItem()
         }
-
     }
 
     @Override
@@ -46,7 +46,8 @@ public class PurchaseOrderBOImpl implements PurchaseOrderBO {
 
     @Override
     public ItemDTO searchItem(Connection connection, String code) throws SQLException, ClassNotFoundException {
-        return null;
+        Item item = itemDAO.search(connection, code);
+        return new ItemDTO(item.getCode(), item.getName(), item.getQty(), item.getPrice());
     }
 
     @Override
