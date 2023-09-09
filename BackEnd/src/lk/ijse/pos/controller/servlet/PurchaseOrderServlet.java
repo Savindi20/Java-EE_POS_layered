@@ -23,19 +23,20 @@ import java.util.List;
 
 import static java.lang.Class.forName;
 
-@WebServlet("/order")
+@WebServlet(urlPatterns = "/order")
 public class PurchaseOrderServlet extends HttpServlet {
 
     private final PurchaseOrderBO purchaseOrderBO = (PurchaseOrderBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.ORDER);
-    private final MessageUtil messageUtil = new MessageUtil();
+    MessageUtil messageUtil = new MessageUtil();
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String option = req.getParameter("option");
 
         try {
             forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            switch (req.getParameter("option")) {
+            switch (option) {
                 case "customer":
                     CustomerDTO customerDTO = purchaseOrderBO.searchCustomer(connection, req.getParameter("cusId"));
                     if (customerDTO != null) {
@@ -46,7 +47,7 @@ public class PurchaseOrderServlet extends HttpServlet {
                         obj.add("cusSalary", customerDTO.getSalary());
 
                         resp.setStatus(200);
-                        resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded..!", obj.build()).build());
+                        resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded..!", obj).build());
                     } else {
                         throw new SQLException("No Such Customer ID");
                     }
@@ -61,7 +62,7 @@ public class PurchaseOrderServlet extends HttpServlet {
                         obj.add("price", itemDTO.getPrice());
 
                         resp.setStatus(200);
-                        resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded..!", obj.build()).build());
+                        resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded..!", obj).build());
                     } else {
                         throw new SQLException("No Such Item Code");
                     }
