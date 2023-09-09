@@ -1,5 +1,10 @@
 package lk.ijse.pos.controller.servlet;
 
+import lk.ijse.pos.bo.BOFactory;
+import lk.ijse.pos.bo.custom.OrderDetailBO;
+import lk.ijse.pos.dto.OrderDetailDTO;
+import lk.ijse.pos.util.MessageUtil;
+
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
@@ -10,40 +15,36 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
 
 @WebServlet(urlPatterns = "/order_detail")
 public class OrderDetailServlet extends HttpServlet {
+    OrderDetailBO orderDetailBO = (OrderDetailBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.ORDER_DETAILS);
+    MessageUtil messageUtil = new MessageUtil();
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        JsonArrayBuilder allOrderDetails = Json.createArrayBuilder();
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Order_Detail");
-            ResultSet rst = pstm.executeQuery();
-            JsonArrayBuilder allItems = Json.createArrayBuilder();
 
-            while (rst.next()) {
-                JsonObjectBuilder item = Json.createObjectBuilder();
-                item.add("orderId", rst.getString("orderId"));
-                item.add("code", rst.getString("code"));
-                item.add("price", rst.getString("price"));
-                item.add("qty", rst.getDouble("qty"));
-                allItems.add(item.build());
+            ArrayList<OrderDetailDTO> all = orderDetailBO.getAllOrderDetails(connection);
+            for (OrderDetailDTO detailDTO : all) {
+                JsonObjectBuilder detail = Json.createObjectBuilder();
+                detail.add("orderId", detailDTO.getOrderId());
+                detail.add("code", detailDTO.getItemCode());
+                detail.add("price", detailDTO.getPrice());
+                detail.add("qty", detailDTO.getQty());
+                allOrderDetails.add(detail.build());
             }
 
-            JsonObjectBuilder job = Json.createObjectBuilder();
-            job.add("state","OK");
-            job.add("message","Successfully Loaded..!");
-            job.add("data",allItems.build());
-            resp.getWriter().print(job.build());
+            resp.setStatus(200);
+            resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded", allOrderDetails).build());
 
-        }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+        } catch (SQLException | ClassNotFoundException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
     }
 }
