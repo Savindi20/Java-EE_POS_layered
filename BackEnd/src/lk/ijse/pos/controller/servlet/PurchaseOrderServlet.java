@@ -4,6 +4,7 @@ import lk.ijse.pos.bo.BOFactory;
 import lk.ijse.pos.bo.custom.PurchaseOrderBO;
 import lk.ijse.pos.dto.OrderDTO;
 import lk.ijse.pos.dto.OrderDetailDTO;
+import lk.ijse.pos.util.MessageUtil;
 
 import javax.json.*;
 import javax.servlet.ServletException;
@@ -22,7 +23,8 @@ import static java.lang.Class.forName;
 
 @WebServlet(urlPatterns = "/order")
 public class PurchaseOrderServlet extends HttpServlet {
-    PurchaseOrderBO purchaseOrderBO = (PurchaseOrderBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.ORDER);
+    private final PurchaseOrderBO purchaseOrderBO = (PurchaseOrderBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.ORDER);
+    private final MessageUtil messageUtil = new MessageUtil();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -105,30 +107,14 @@ public class PurchaseOrderServlet extends HttpServlet {
                 orderDetails.add(new OrderDetailDTO(orderId, jsonObject.getString("code"), Double.parseDouble(jsonObject.getString("unitPrice")), Integer.parseInt(jsonObject.getString("qty"))));
             }
 
-            boolean b = purchaseOrderBO.purchaseOrder(connection, new OrderDTO(orderId, cusId, total, LocalDate.now().toString(), orderDetails));
+            if (purchaseOrderBO.purchaseOrder(connection, new OrderDTO(orderId, cusId, total, LocalDate.now().toString(), orderDetails))) {
+                resp.getWriter().print(messageUtil.buildJsonObject("OK", "Order Placed", "").build());
 
-            if (b) {
-                JsonObjectBuilder obj = Json.createObjectBuilder();
-                obj.add("state", "OK");
-                obj.add("message", "Order Placed");
-                obj.add("data", "");
-                resp.setStatus(200);
-                resp.getWriter().print(obj.build());
             }
-        } catch (ClassNotFoundException e) {
-            JsonObjectBuilder obj = Json.createObjectBuilder();
-            obj.add("state", "Error");
-            obj.add("message", e.getLocalizedMessage());
-            obj.add("data", "");
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);  // 500 // Server Side Errors
-            resp.getWriter().print(obj.build());
-        } catch (SQLException e) {
-            JsonObjectBuilder obj = Json.createObjectBuilder();
-            obj.add("state", "Error");
-            obj.add("message", e.getLocalizedMessage());
-            obj.add("data", "");
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);  // 400 // Client Side Errors
-            resp.getWriter().print(obj.build());
+
+        } catch (ClassNotFoundException | SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
     }
 
