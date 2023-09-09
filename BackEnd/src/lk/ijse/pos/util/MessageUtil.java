@@ -6,7 +6,6 @@ import javax.json.JsonObjectBuilder;
 
 public class MessageUtil {
     public JsonObjectBuilder buildJsonObject(String state, String message, Object data) {
-
         JsonObjectBuilder obj = Json.createObjectBuilder();
 
         obj.add("state", state);
@@ -18,7 +17,7 @@ public class MessageUtil {
 
         } else if (data instanceof JsonObjectBuilder) {
 
-            obj.add("data", ((JsonObjectBuilder) data).build());
+            obj.add("data", (JsonObjectBuilder) data);
 
         } else {
 
@@ -27,6 +26,5 @@ public class MessageUtil {
         }
 
         return obj;
-
     }
 }

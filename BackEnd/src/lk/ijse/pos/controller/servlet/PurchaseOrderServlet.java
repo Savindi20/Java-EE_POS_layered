@@ -3,6 +3,7 @@ package lk.ijse.pos.controller.servlet;
 import lk.ijse.pos.bo.BOFactory;
 import lk.ijse.pos.bo.custom.PurchaseOrderBO;
 import lk.ijse.pos.dto.CustomerDTO;
+import lk.ijse.pos.dto.ItemDTO;
 import lk.ijse.pos.dto.OrderDTO;
 import lk.ijse.pos.dto.OrderDetailDTO;
 import lk.ijse.pos.util.MessageUtil;
@@ -22,26 +23,21 @@ import java.util.List;
 
 import static java.lang.Class.forName;
 
-@WebServlet(urlPatterns = "/order")
+@WebServlet("/order")
 public class PurchaseOrderServlet extends HttpServlet {
+
     private final PurchaseOrderBO purchaseOrderBO = (PurchaseOrderBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.ORDER);
     private final MessageUtil messageUtil = new MessageUtil();
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String option = req.getParameter("option");
 
         try {
             forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
 
-            PreparedStatement pstm;
-            ResultSet resultSet;
-
-            switch (option) {
+            switch (req.getParameter("option")) {
                 case "customer":
                     CustomerDTO customerDTO = purchaseOrderBO.searchCustomer(connection, req.getParameter("cusId"));
-
                     if (customerDTO != null) {
                         JsonObjectBuilder obj = Json.createObjectBuilder();
                         obj.add("cusId", customerDTO.getCusId());
@@ -49,50 +45,38 @@ public class PurchaseOrderServlet extends HttpServlet {
                         obj.add("cusAddress", customerDTO.getAddress());
                         obj.add("cusSalary", customerDTO.getSalary());
 
-                        obj.add("state", "OK");
-                        obj.add("message", "Successfully Loaded..!");
-                        obj.add("data", obj.build());
                         resp.setStatus(200);
-                        resp.getWriter().print(obj.build());
+                        resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded..!", obj.build()).build());
                     } else {
                         throw new SQLException("No Such Customer ID");
                     }
                     break;
                 case "item":
-                    String code = req.getParameter("code");
-                    pstm = connection.prepareStatement("SELECT * FROM Item WHERE code=?");
-                    pstm.setString(1, code);
-                    resultSet = pstm.executeQuery();
-                    if (resultSet.next()) {
+                    ItemDTO itemDTO = purchaseOrderBO.searchItem(connection, req.getParameter("code"));
+                    if (itemDTO != null) {
                         JsonObjectBuilder obj = Json.createObjectBuilder();
-                        obj.add("code", resultSet.getString(1));
-                        obj.add("name", resultSet.getString(2));
-                        obj.add("qty", resultSet.getInt(3));
-                        obj.add("price", resultSet.getDouble(4));
-                        obj.add("state", "OK");
-                        obj.add("message", "Successfully Loaded..!");
-                        obj.add("data", obj.build());
+                        obj.add("code", itemDTO.getCode());
+                        obj.add("name", itemDTO.getName());
+                        obj.add("qty", itemDTO.getQtyOnHand());
+                        obj.add("price", itemDTO.getPrice());
+
                         resp.setStatus(200);
-                        resp.getWriter().print(obj.build());
+                        resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Loaded..!", obj.build()).build());
                     } else {
-                        throw new SQLException("No Such Customer ID");
+                        throw new SQLException("No Such Item Code");
                     }
                     break;
             }
         } catch (SQLException | ClassNotFoundException e) {
-            JsonObjectBuilder obj = Json.createObjectBuilder();
-            obj.add("state", "Error");
-            obj.add("message", e.getLocalizedMessage());
-            obj.add("data", "");
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().print(obj.build());
+            resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
         }
     }
+
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         JsonReader reader = Json.createReader(req.getReader());
-
         JsonObject details = reader.readObject();
         String cusId = details.getString("cusId");
         double total = Double.parseDouble(details.getString("total"));
@@ -108,12 +92,10 @@ public class PurchaseOrderServlet extends HttpServlet {
                 JsonObject jsonObject = item.asJsonObject();
                 orderDetails.add(new OrderDetailDTO(orderId, jsonObject.getString("code"), Double.parseDouble(jsonObject.getString("unitPrice")), Integer.parseInt(jsonObject.getString("qty"))));
             }
-
             if (purchaseOrderBO.purchaseOrder(connection, new OrderDTO(orderId, cusId, total, LocalDate.now().toString(), orderDetails))) {
+                resp.setStatus(200);
                 resp.getWriter().print(messageUtil.buildJsonObject("OK", "Order Placed", "").build());
-
             }
-
         } catch (ClassNotFoundException | SQLException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().print(messageUtil.buildJsonObject("Error", e.getLocalizedMessage(), "").build());
