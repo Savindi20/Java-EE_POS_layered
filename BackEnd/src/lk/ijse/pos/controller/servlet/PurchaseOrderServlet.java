@@ -1,5 +1,8 @@
 package lk.ijse.pos.controller.servlet;
 
+import lk.ijse.pos.bo.BOFactory;
+import lk.ijse.pos.bo.custom.PurchaseOrderBO;
+import lk.ijse.pos.dto.OrderDTO;
 import lk.ijse.pos.dto.OrderDetailDTO;
 
 import javax.json.*;
@@ -10,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -17,6 +22,8 @@ import static java.lang.Class.forName;
 
 @WebServlet(urlPatterns = "/order")
 public class PurchaseOrderServlet extends HttpServlet {
+    PurchaseOrderBO purchaseOrderBO = (PurchaseOrderBO) BOFactory.getInstance().getBO(BOFactory.BOTypes.ORDER);
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String option = req.getParameter("option");
@@ -84,36 +91,22 @@ public class PurchaseOrderServlet extends HttpServlet {
 
         JsonObject details = reader.readObject();
         String cusId = details.getString("cusId");
-        String total = details.getString("total");
-
+        double total = Double.parseDouble(details.getString("total"));
         JsonArray items = details.getJsonArray("items");
-        OrderDetailDTO[] objects = (OrderDetailDTO[]) items.toArray();
-        List<OrderDetailDTO> orderDetails = Arrays.asList(objects);
-
-        boolean b = false;
 
         try {
             forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+
             String orderId = generateNewID();
-            PreparedStatement pstm = connection.prepareStatement("INSERT INTO `Order` VALUES (?,?,?)");
-            pstm.setString(1, orderId);
-            pstm.setString(2, cusId);
-            pstm.setDouble(3, Double.parseDouble(total));
-            pstm.executeUpdate();
+            List<OrderDetailDTO> orderDetails = new ArrayList<>();
             for (JsonValue item : items) {
-                pstm = connection.prepareStatement("INSERT INTO Order_Detail VALUES (?,?,?,?)");
                 JsonObject jsonObject = item.asJsonObject();
-                pstm.setString(1, orderId);
-                pstm.setString(2, jsonObject.getString("code"));
-                pstm.setDouble(3, Double.parseDouble(jsonObject.getString("unitPrice")));
-                pstm.setInt(4, Integer.parseInt(jsonObject.getString("qty")));
-                pstm.executeUpdate();
-                pstm = connection.prepareStatement("UPDATE Item SET qty=qty-? WHERE code=?");
-                pstm.setInt(1, Integer.parseInt(jsonObject.getString("qty")));
-                pstm.setString(2, jsonObject.getString("code"));
-                b = pstm.executeUpdate() > 0;
+                orderDetails.add(new OrderDetailDTO(orderId, jsonObject.getString("code"), Double.parseDouble(jsonObject.getString("unitPrice")), Integer.parseInt(jsonObject.getString("qty"))));
             }
+
+            boolean b = purchaseOrderBO.purchaseOrder(connection, new OrderDTO(orderId, cusId, total, LocalDate.now().toString(), orderDetails));
+
             if (b) {
                 JsonObjectBuilder obj = Json.createObjectBuilder();
                 obj.add("state", "OK");
