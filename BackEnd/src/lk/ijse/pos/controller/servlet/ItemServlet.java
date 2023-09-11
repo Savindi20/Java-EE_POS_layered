@@ -4,6 +4,7 @@ import lk.ijse.pos.bo.BOFactory;
 import lk.ijse.pos.bo.custom.ItemBO;
 import lk.ijse.pos.dto.ItemDTO;
 import lk.ijse.pos.util.MessageUtil;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.json.*;
 import javax.servlet.ServletException;
@@ -23,9 +24,7 @@ public class ItemServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
         JsonArrayBuilder allItems = Json.createArrayBuilder();
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             ArrayList<ItemDTO> items = itemBO.getAllItems(connection);
             for (ItemDTO item : items) {
@@ -55,9 +54,7 @@ public class ItemServlet extends HttpServlet {
         int qty = Integer.parseInt(req.getParameter("qtyOnHand"));
         double price = Double.parseDouble(req.getParameter("price"));
 
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             if (itemBO.saveItem(connection, new ItemDTO(code, name, qty, price))) {
                 resp.setStatus(200);
@@ -73,9 +70,7 @@ public class ItemServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String code = req.getParameter("code");
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             if (itemBO.deleteItems(connection, code)) {
                 resp.setStatus(200);
@@ -100,9 +95,8 @@ public class ItemServlet extends HttpServlet {
         int qty = item.getInt("qtyOnHand");
         double price = Double.parseDouble(item.getString("price"));
 
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
+
             if (itemBO.updateItem(connection, new ItemDTO(code, name, qty, price))){
                 resp.setStatus(200);
                 resp.getWriter().print(messageUtil.buildJsonObject("OK", "Successfully Updated", "").build());

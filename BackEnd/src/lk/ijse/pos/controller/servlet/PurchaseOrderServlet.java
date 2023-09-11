@@ -7,6 +7,7 @@ import lk.ijse.pos.dto.ItemDTO;
 import lk.ijse.pos.dto.OrderDTO;
 import lk.ijse.pos.dto.OrderDetailDTO;
 import lk.ijse.pos.util.MessageUtil;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.json.*;
 import javax.servlet.ServletException;
@@ -32,9 +33,7 @@ public class PurchaseOrderServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String option = req.getParameter("option");
 
-        try {
-            forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             switch (option) {
                 case "customer":
@@ -83,9 +82,7 @@ public class PurchaseOrderServlet extends HttpServlet {
         double total = Double.parseDouble(details.getString("total"));
         JsonArray items = details.getJsonArray("items");
 
-        try {
-            forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             String orderId = purchaseOrderBO.generateNewOrderID(connection);
             List<OrderDetailDTO> orderDetails = new ArrayList<>();

@@ -5,6 +5,7 @@ import lk.ijse.pos.bo.custom.CustomerBO;
 import lk.ijse.pos.dto.CustomerDTO;
 import lk.ijse.pos.dto.ItemDTO;
 import lk.ijse.pos.util.MessageUtil;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.json.*;
 import javax.servlet.ServletException;
@@ -25,9 +26,7 @@ public class CustomerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         JsonArrayBuilder allCustomers = Json.createArrayBuilder();
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try(Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()) {
 
             ArrayList<CustomerDTO> all = customerBO.getAllCustomers(connection);
             for (CustomerDTO customerDTO : all) {
@@ -57,9 +56,7 @@ public class CustomerServlet extends HttpServlet {
         String cusAddress = req.getParameter("cusAddress");
         double cusSalary = Double.parseDouble(req.getParameter("cusSalary"));
 
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try(Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             if (customerBO.saveCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary))) {
                 resp.setStatus(200);
@@ -77,9 +74,7 @@ public class CustomerServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String cusId = req.getParameter("cusId");
 
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             if (customerBO.deleteCustomer(connection, cusId)) {
                 resp.setStatus(200);
@@ -103,9 +98,7 @@ public class CustomerServlet extends HttpServlet {
         String cusName = customer.getString("name");
         String cusAddress = customer.getString("address");
         double cusSalary = Double.parseDouble(customer.getString("cusSalary"));
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             if (customerBO.updateCustomer(connection, new CustomerDTO(cusId, cusName, cusAddress, cusSalary))) {
                 resp.setStatus(200);

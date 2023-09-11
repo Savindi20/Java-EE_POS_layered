@@ -4,6 +4,7 @@ import lk.ijse.pos.bo.BOFactory;
 import lk.ijse.pos.bo.custom.OrderDetailBO;
 import lk.ijse.pos.dto.OrderDetailDTO;
 import lk.ijse.pos.util.MessageUtil;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -25,9 +26,7 @@ public class OrderDetailServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         JsonArrayBuilder allOrderDetails = Json.createArrayBuilder();
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+        try (Connection connection = ((BasicDataSource) getServletContext().getAttribute("dbcp")).getConnection()){
 
             ArrayList<OrderDetailDTO> all = orderDetailBO.getAllOrderDetails(connection);
             for (OrderDetailDTO detailDTO : all) {
